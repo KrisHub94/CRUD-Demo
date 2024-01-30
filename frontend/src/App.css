@@ -1,42 +1,141 @@
-:root {
-  --main-color: #2596be;
-  --secondary-color: #e7ecdb;
-}
-.App {
-  text-align: center;
+body{
+  background: rgb(29, 32, 77);
+  color: white;
+  width: 100%;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: var(--main-color);
-  min-height: 100vh;
+.App{
   display: flex;
   flex-direction: column;
+  width: inherit;
+}
+/*===============Header===========================================================================================*/
+.Header-container{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  justify-self: center;
+  width: inherit;
+}
+
+.Header{
+background: rgb(0, 106, 255);
+width:inherit;
+display: flex ;
+justify-content: space-between;
+align-items: center;
+}
+
+.Logo{
+  height: 12vmin;
+}
+
+.Header-p{
+  align-self: center;
+  font-size: 4vmin;
+  font-family:'Times New Roman', Times, serif;
+  font-weight: bolder;
+}
+
+.Login-Logout{
+  height: 10vmin;
+  align-self: center;
+  margin-right: 5px;
+}
+
+
+/*=========LOGIN=============================================================================================*/
+.Login-container{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;;
+}
+
+.Login-title{
+
+}
+.Login-form-wrapper{
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: rgb(0, 106, 255);
+}
+
+.Login-form-container{
+ width: 40vw;
+ margin-top: 25px;
+ min-width: 239px;
+ max-width: 239px;
+}
+
+.Login-form-container input{
+  width: 28vw;
+  min-width: 150px;
+  max-width: 150px;
+ }
+
+.Username-container{
+  display: flex;
+  justify-content: space-between;
+  width:inherit
+}
+
+.Password-container{
+  display: flex;
+  justify-content: space-between;
+  width:inherit
+}
+
+.Login-button-container{
+  margin-top: 5px;
+  display: flex;
+  width: inherit;
   align-items: center;
   justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
 }
 
-.App-link {
-  color: #61dafb;
+.Login-button{
+  width: inherit;
+  align-self: center;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.Login-form-wrapper a{
+  color: aqua;
+}
+/*====REGISTRATION======================================================*/
+.Registration-title{
+  align-self: center;
+}
+
+.Registration-form{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100vw;
+  align-self: center;
+  margin-top: 10px;
+  background: rgb(0, 106, 255);
+  padding-top: 30px;
+  padding-bottom: 30px;
+}
+
+.Register-username-container{
+ display: flex;
+ justify-content: space-between;
+ width: 250px;
+}
+
+.Register-password-container{
+  display: flex;
+  justify-content: space-between;
+  width: 250px;
+  margin-top: 10px;
+}
+
+.Registration-form button{
+  margin-top: 10px;
 }
