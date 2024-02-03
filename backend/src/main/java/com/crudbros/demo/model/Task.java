@@ -2,6 +2,7 @@ package com.crudbros.demo.model;
 
 import com.crudbros.demo.data.Status;
 import jakarta.persistence.*;
+
 import java.time.LocalDate;
 
 @Entity
@@ -10,6 +11,7 @@ public class Task {
     @GeneratedValue
     private long id;
     private String title;
+    private long userId;
     @Enumerated(EnumType.STRING)
     private Status status;
     private String description;
@@ -30,6 +32,14 @@ public class Task {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(long userId) {
+        this.userId = userId;
     }
 
     public Status getStatus() {

@@ -7,7 +7,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("tasks")
@@ -19,52 +18,87 @@ public class TaskController {
     }
 
     @GetMapping
-    List<Task> findAllTasks() {return taskRepository.findAll();}
-
-    //TODO: TaskNotFoundException erstellen und einfügen
-    //TODO: restliche Endpoints
-    //TODO:
+    List<Task> findAllTasks() {
+        List<Task> tasks = taskRepository.findAll();
+        if (tasks.isEmpty()) {
+            throw new TaskNotFoundException("No tasks found");
+        }
+        return tasks;
+    }
 
     @GetMapping("{id}")
-    Optional<Task> findById( @PathVariable long id) {
-        return taskRepository.findById(id);
+    Task findById(@PathVariable long id) throws TaskNotFoundException {
+        return taskRepository.findById(id).orElseThrow(() -> new TaskNotFoundException("Task with id " + id + " not found"));
     }
 
     @GetMapping("title/{title}")
-    Optional<Task> findByTitle(@PathVariable String title) {
-        return taskRepository.findByTitle(title);
+    Task findByTitle(@PathVariable String title) throws TaskNotFoundException {
+        return taskRepository.findByTitle(title).orElseThrow(() -> new TaskNotFoundException("Task with title " + title + " not found"));
+    }
+
+    @GetMapping("userId/{userId}")
+    List<Task> findByUserId(@PathVariable long userId) {
+        List<Task> tasks = taskRepository.findByUserId(userId);
+        if (tasks.isEmpty()) {
+            throw new TaskNotFoundException("No tasks found for user with id " + userId);
+        }
+        return tasks;
     }
 
     @GetMapping("status/{status}")
     List<Task> findByStatus(@PathVariable Status status) {
-        return taskRepository.findByStatus(status);
+        List<Task> tasks = taskRepository.findByStatus(status);
+        if (tasks.isEmpty()) {
+            throw new TaskNotFoundException("No tasks found with status " + status);
+        }
+        return tasks;
     }
 
     @GetMapping("start/{start}")
     List<Task> findByStart(@PathVariable LocalDate start) {
-        return taskRepository.findByStart(start);
+        List<Task> tasks = taskRepository.findByStart(start);
+        if (tasks.isEmpty()) {
+            throw new TaskNotFoundException("No tasks found with start date " + start);
+        }
+        return tasks;
     }
 
     @GetMapping("deadline/{deadline}")
     List<Task> findByDeadLine(@PathVariable LocalDate deadline) {
-        return taskRepository.findByDeadLine(deadline);
+        List<Task> tasks = taskRepository.findByDeadLine(deadline);
+        if (tasks.isEmpty()) {
+            throw new TaskNotFoundException("No tasks found with deadline " + deadline);
+        }
+        return tasks;
     }
 
     @PostMapping
-    Task save(@RequestBody Task newTask) {
+    Task save(@RequestBody Task newTask) throws TaskAlreadyExistsException {
+        if (taskRepository.existsById(newTask.getId())) {
+            throw new TaskAlreadyExistsException("Task with id " + newTask.getId() + " already exists");
+        }
         return taskRepository.save(newTask);
     }
 
     @DeleteMapping("{id}")
-    void delete(@PathVariable long id) {
+    void delete(@PathVariable long id) throws TaskNotFoundException {
+        if (!taskRepository.existsById(id)) {
+            throw new TaskNotFoundException("Task with id " + id + " not found");
+        }
         taskRepository.deleteById(id);
     }
 
     @PutMapping("{id}")
-    void updateTask(@PathVariable long id, @RequestBody Task updatedTask) {
-        Optional<Task> existingTask = taskRepository.findById(id); //hier .orElseThrow(TNFExcept.)
+    void updateTask(@PathVariable long id, @RequestBody Task updatedTask) throws TaskNotFoundException {
+        Task existingTask = taskRepository.findById(id).orElseThrow(() -> new TaskNotFoundException("Task with id " + id + " not found"));
 
-        //TODO: TNFE, dann properties von existing Task updaten .setId etc.
+        existingTask.setTitle(updatedTask.getTitle());
+        existingTask.setUserId(updatedTask.getUserId());
+        existingTask.setStatus(updatedTask.getStatus());
+        existingTask.setDescription(updatedTask.getDescription());
+        existingTask.setStart(updatedTask.getStart());
+        existingTask.setDeadline(updatedTask.getDeadline());
+
+        taskRepository.save(existingTask);
     }
-
 }
