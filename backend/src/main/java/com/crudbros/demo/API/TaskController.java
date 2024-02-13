@@ -3,10 +3,13 @@ package com.crudbros.demo.API;
 import com.crudbros.demo.data.Status;
 import com.crudbros.demo.model.Task;
 import com.crudbros.demo.model.TaskRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("tasks")
@@ -18,87 +21,129 @@ public class TaskController {
     }
 
     @GetMapping
-    List<Task> findAllTasks() {
+    public ResponseEntity<Object> findAllTasks() {
         List<Task> tasks = taskRepository.findAll();
         if (tasks.isEmpty()) {
-            throw new TaskNotFoundException("No tasks found");
+            return new ResponseEntity<>("No tasks saved", HttpStatus.NOT_FOUND);
         }
-        return tasks;
+        return new ResponseEntity<>(tasks, HttpStatus.OK);
     }
 
+
     @GetMapping("{id}")
-    Task findById(@PathVariable long id) throws TaskNotFoundException {
-        return taskRepository.findById(id).orElseThrow(() -> new TaskNotFoundException("Task with id " + id + " not found"));
+    public ResponseEntity<Object> findTaskById(@PathVariable Long id) {
+        Optional<Task> taskOptional = taskRepository.findById(id);
+        if (taskOptional.isEmpty()) {
+            return new ResponseEntity<>("TaskId not found", HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(taskOptional.get(), HttpStatus.OK);
     }
 
     @GetMapping("title/{title}")
-    Task findByTitle(@PathVariable String title) throws TaskNotFoundException {
-        return taskRepository.findByTitle(title).orElseThrow(() -> new TaskNotFoundException("Task with title " + title + " not found"));
+    public ResponseEntity<Object> findByTitle(@PathVariable String title) {
+        Optional<Task> task = taskRepository.findByTitle(title);
+        if (task.isEmpty()) {
+            return new ResponseEntity<>("Title not found", HttpStatus.NOT_FOUND);
+        } else {
+            return new ResponseEntity<>(task, HttpStatus.OK);
+        }
     }
 
+    @GetMapping("sameTitles/{title}")
+    public ResponseEntity<Object> findAllByTitle(@PathVariable String title) {
+        List<Task> tasks = taskRepository.findAllByTitle(title);
+        if (tasks.isEmpty()) {
+            return new ResponseEntity<>("No tasks found with this title", HttpStatus.NOT_FOUND);
+        } else {
+            return new ResponseEntity<>(tasks, HttpStatus.OK);
+        }
+    }
+
+
     @GetMapping("userId/{userId}")
-    List<Task> findByUserId(@PathVariable long userId) {
+    ResponseEntity<Object> findByUserId(@PathVariable long userId) {
         List<Task> tasks = taskRepository.findByUserId(userId);
         if (tasks.isEmpty()) {
-            throw new TaskNotFoundException("No tasks found for user with id " + userId);
+            return new ResponseEntity<>("UserId not found", HttpStatus.NOT_FOUND);
         }
-        return tasks;
+        return new ResponseEntity<>(tasks, HttpStatus.OK);
     }
 
     @GetMapping("status/{status}")
-    List<Task> findByStatus(@PathVariable Status status) {
+    ResponseEntity<Object> findByStatus(@PathVariable Status status) {
         List<Task> tasks = taskRepository.findByStatus(status);
         if (tasks.isEmpty()) {
-            throw new TaskNotFoundException("No tasks found with status " + status);
+            return new ResponseEntity<>("Status not found", HttpStatus.NOT_FOUND);
         }
-        return tasks;
+        return new ResponseEntity<>(tasks, HttpStatus.OK);
     }
 
     @GetMapping("start/{start}")
-    List<Task> findByStart(@PathVariable LocalDate start) {
+    ResponseEntity<Object> findByStart(@PathVariable LocalDate start) {
         List<Task> tasks = taskRepository.findByStart(start);
         if (tasks.isEmpty()) {
-            throw new TaskNotFoundException("No tasks found with start date " + start);
+            return new ResponseEntity<>("Start date not found", HttpStatus.NOT_FOUND);
         }
-        return tasks;
+        return new ResponseEntity<>(tasks, HttpStatus.OK);
     }
 
     @GetMapping("deadline/{deadline}")
-    List<Task> findByDeadLine(@PathVariable LocalDate deadline) {
+    ResponseEntity<Object> findByDeadLine(@PathVariable LocalDate deadline) {
         List<Task> tasks = taskRepository.findByDeadLine(deadline);
         if (tasks.isEmpty()) {
-            throw new TaskNotFoundException("No tasks found with deadline " + deadline);
+            return new ResponseEntity<>("Deadline not found", HttpStatus.NOT_FOUND);
         }
-        return tasks;
+        return new ResponseEntity<>(tasks, HttpStatus.OK);
     }
 
     @PostMapping
-    Task save(@RequestBody Task newTask) throws TaskAlreadyExistsException {
-        if (taskRepository.existsById(newTask.getId())) {
-            throw new TaskAlreadyExistsException("Task with id " + newTask.getId() + " already exists");
+    ResponseEntity<Object> save(@RequestBody Task newTask) {
+        List<Task> tasksWithNewTitle = taskRepository.findAllByTitle(newTask.getTitle());
+
+        boolean isPresent = !tasksWithNewTitle.isEmpty();
+
+        if (isPresent) {
+            return new ResponseEntity<>("Task with the same title already exists", HttpStatus.CONFLICT);
         }
-        return taskRepository.save(newTask);
+
+        Task savedTask = taskRepository.save(newTask);
+        return new ResponseEntity<>(savedTask, HttpStatus.CREATED);
     }
 
+
     @DeleteMapping("{id}")
-    void delete(@PathVariable long id) throws TaskNotFoundException {
+    ResponseEntity<Object> delete(@PathVariable long id) {
         if (!taskRepository.existsById(id)) {
-            throw new TaskNotFoundException("Task with id " + id + " not found");
+            return new ResponseEntity<>("Task to delete not found", HttpStatus.NOT_FOUND);
         }
         taskRepository.deleteById(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
     @PutMapping("{id}")
-    void updateTask(@PathVariable long id, @RequestBody Task updatedTask) throws TaskNotFoundException {
-        Task existingTask = taskRepository.findById(id).orElseThrow(() -> new TaskNotFoundException("Task with id " + id + " not found"));
+    ResponseEntity<?> updateTask(@PathVariable long id, @RequestBody Task updatedTask) {
+        return taskRepository.findById(id)
+                .map(existingTask -> {
+                    List<Task> tasksWithUpdatedTaskTitle = taskRepository.findAllByTitle(updatedTask.getTitle());
 
-        existingTask.setTitle(updatedTask.getTitle());
-        existingTask.setUserId(updatedTask.getUserId());
-        existingTask.setStatus(updatedTask.getStatus());
-        existingTask.setDescription(updatedTask.getDescription());
-        existingTask.setStart(updatedTask.getStart());
-        existingTask.setDeadline(updatedTask.getDeadline());
+                    boolean isConflict = tasksWithUpdatedTaskTitle.stream()
+                            .anyMatch(task -> task.getId() != (existingTask.getId()));
 
-        taskRepository.save(existingTask);
+                    if (isConflict) {
+                        return new ResponseEntity<>("Task with the same title already exists", HttpStatus.CONFLICT);
+                    }
+
+                    existingTask.setTitle(updatedTask.getTitle());
+                    existingTask.setUserId(updatedTask.getUserId());
+                    existingTask.setStatus(updatedTask.getStatus());
+                    existingTask.setDescription(updatedTask.getDescription());
+                    existingTask.setStart(updatedTask.getStart());
+                    existingTask.setDeadline(updatedTask.getDeadline());
+
+                    Task savedTask = taskRepository.save(existingTask);
+                    return new ResponseEntity<>(savedTask, HttpStatus.OK);
+                })
+                .orElse(new ResponseEntity<>("Task not found", HttpStatus.NOT_FOUND));
     }
+
 }
