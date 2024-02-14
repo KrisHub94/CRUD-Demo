@@ -16,7 +16,7 @@ public class Task {
     private Status status;
     private String description;
     private LocalDate start;
-    private LocalDate deadline;
+    private LocalDate deadLine;
 
     public long getId() {
         return id;
@@ -66,11 +66,11 @@ public class Task {
         this.start = start;
     }
 
-    public LocalDate getDeadline() {
-        return deadline;
+    public LocalDate getDeadLine() {
+        return deadLine;
     }
 
-    public void setDeadline(LocalDate deadline) {
-        this.deadline = deadline;
+    public void setDeadLine(LocalDate deadLine) {
+        this.deadLine = deadLine;
     }
 }
