@@ -24,7 +24,7 @@ public class TaskController {
     public ResponseEntity<Object> findAllTasks() {
         List<Task> tasks = taskRepository.findAll();
         if (tasks.isEmpty()) {
-            return new ResponseEntity<>("No tasks saved", HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>("No tasks saved!", HttpStatus.NOT_FOUND);
         }
         return new ResponseEntity<>(tasks, HttpStatus.OK);
     }
@@ -34,7 +34,7 @@ public class TaskController {
     public ResponseEntity<Object> findTaskById(@PathVariable Long id) {
         Optional<Task> taskOptional = taskRepository.findById(id);
         if (taskOptional.isEmpty()) {
-            return new ResponseEntity<>("TaskId not found", HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>("TaskId not found!", HttpStatus.NOT_FOUND);
         }
         return new ResponseEntity<>(taskOptional.get(), HttpStatus.OK);
     }
@@ -43,7 +43,7 @@ public class TaskController {
     public ResponseEntity<Object> findByTitle(@PathVariable String title) {
         Optional<Task> task = taskRepository.findByTitle(title);
         if (task.isEmpty()) {
-            return new ResponseEntity<>("Title not found", HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>("Title not found!", HttpStatus.NOT_FOUND);
         } else {
             return new ResponseEntity<>(task, HttpStatus.OK);
         }
@@ -53,7 +53,7 @@ public class TaskController {
     public ResponseEntity<Object> findAllByTitle(@PathVariable String title) {
         List<Task> tasks = taskRepository.findAllByTitle(title);
         if (tasks.isEmpty()) {
-            return new ResponseEntity<>("No tasks found with this title", HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>("No tasks found with this title!", HttpStatus.NOT_FOUND);
         } else {
             return new ResponseEntity<>(tasks, HttpStatus.OK);
         }
@@ -64,7 +64,7 @@ public class TaskController {
     ResponseEntity<Object> findByUserId(@PathVariable long userId) {
         List<Task> tasks = taskRepository.findByUserId(userId);
         if (tasks.isEmpty()) {
-            return new ResponseEntity<>("UserId not found", HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>("UserId not found!", HttpStatus.NOT_FOUND);
         }
         return new ResponseEntity<>(tasks, HttpStatus.OK);
     }
@@ -73,7 +73,7 @@ public class TaskController {
     ResponseEntity<Object> findByStatus(@PathVariable Status status) {
         List<Task> tasks = taskRepository.findByStatus(status);
         if (tasks.isEmpty()) {
-            return new ResponseEntity<>("Status not found", HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>("Status not found!", HttpStatus.NOT_FOUND);
         }
         return new ResponseEntity<>(tasks, HttpStatus.OK);
     }
@@ -82,16 +82,16 @@ public class TaskController {
     ResponseEntity<Object> findByStart(@PathVariable LocalDate start) {
         List<Task> tasks = taskRepository.findByStart(start);
         if (tasks.isEmpty()) {
-            return new ResponseEntity<>("Start date not found", HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>("Start date not found!", HttpStatus.NOT_FOUND);
         }
         return new ResponseEntity<>(tasks, HttpStatus.OK);
     }
 
-    @GetMapping("deadline/{deadline}")
-    ResponseEntity<Object> findByDeadLine(@PathVariable LocalDate deadline) {
-        List<Task> tasks = taskRepository.findByDeadLine(deadline);
+    @GetMapping("deadLine/{deadLine}")
+    ResponseEntity<Object> findByDeadLine(@PathVariable LocalDate deadLine) {
+        List<Task> tasks = taskRepository.findByDeadLine(deadLine);
         if (tasks.isEmpty()) {
-            return new ResponseEntity<>("Deadline not found", HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>("Deadline not found!", HttpStatus.NOT_FOUND);
         }
         return new ResponseEntity<>(tasks, HttpStatus.OK);
     }
@@ -103,7 +103,7 @@ public class TaskController {
         boolean isPresent = !tasksWithNewTitle.isEmpty();
 
         if (isPresent) {
-            return new ResponseEntity<>("Task with the same title already exists", HttpStatus.CONFLICT);
+            return new ResponseEntity<>("Task with the same title already exists!", HttpStatus.CONFLICT);
         }
 
         Task savedTask = taskRepository.save(newTask);
@@ -112,38 +112,49 @@ public class TaskController {
 
 
     @DeleteMapping("{id}")
-    ResponseEntity<Object> delete(@PathVariable long id) {
+    ResponseEntity<Object> deleteById(@PathVariable long id) {
         if (!taskRepository.existsById(id)) {
-            return new ResponseEntity<>("Task to delete not found", HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>("Task to delete not found!", HttpStatus.NOT_FOUND);
         }
         taskRepository.deleteById(id);
-        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+        return new ResponseEntity<>("Task deleted successfully!", HttpStatus.ACCEPTED);
     }
+
+    @DeleteMapping("/deleteAllTasks")
+    public ResponseEntity<String> deleteAllTasks() {
+        taskRepository.deleteAll();
+        return new ResponseEntity<>("All tasks were deleted successfully!", HttpStatus.OK);
+    }
+
 
     @PutMapping("{id}")
-    ResponseEntity<?> updateTask(@PathVariable long id, @RequestBody Task updatedTask) {
-        return taskRepository.findById(id)
-                .map(existingTask -> {
-                    List<Task> tasksWithUpdatedTaskTitle = taskRepository.findAllByTitle(updatedTask.getTitle());
+    ResponseEntity<?> updateTaskById(@PathVariable long id, @RequestBody Task updatedTask) {
+        Optional<Task> optionalExistingTask = taskRepository.findById(id);
 
-                    boolean isConflict = tasksWithUpdatedTaskTitle.stream()
-                            .anyMatch(task -> task.getId() != (existingTask.getId()));
+        if (optionalExistingTask.isEmpty()) {
+            return new ResponseEntity<>("Task to update not found!", HttpStatus.NOT_FOUND);
+        }
 
-                    if (isConflict) {
-                        return new ResponseEntity<>("Task with the same title already exists", HttpStatus.CONFLICT);
-                    }
+        Task existingTask = optionalExistingTask.get();
+        List<Task> tasksWithUpdatedTaskTitle = taskRepository.findAllByTitle(updatedTask.getTitle());
 
-                    existingTask.setTitle(updatedTask.getTitle());
-                    existingTask.setUserId(updatedTask.getUserId());
-                    existingTask.setStatus(updatedTask.getStatus());
-                    existingTask.setDescription(updatedTask.getDescription());
-                    existingTask.setStart(updatedTask.getStart());
-                    existingTask.setDeadline(updatedTask.getDeadline());
+        boolean isConflict = tasksWithUpdatedTaskTitle.stream()
+                .anyMatch(task -> task.getId() != existingTask.getId());
 
-                    Task savedTask = taskRepository.save(existingTask);
-                    return new ResponseEntity<>(savedTask, HttpStatus.OK);
-                })
-                .orElse(new ResponseEntity<>("Task not found", HttpStatus.NOT_FOUND));
+        if (isConflict) {
+            return new ResponseEntity<>("Task with the same title already exists", HttpStatus.CONFLICT);
+        }
+
+        existingTask.setTitle(updatedTask.getTitle());
+        existingTask.setUserId(updatedTask.getUserId());
+        existingTask.setStatus(updatedTask.getStatus());
+        existingTask.setDescription(updatedTask.getDescription());
+        existingTask.setStart(updatedTask.getStart());
+        existingTask.setDeadLine(updatedTask.getDeadLine());
+
+        Task savedTask = taskRepository.save(existingTask);
+        return new ResponseEntity<>(savedTask, HttpStatus.OK);
     }
+
 
 }
